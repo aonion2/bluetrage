@@ -318,34 +318,10 @@ function event() {
           if(orderGOAnti === "1"){
             normalTrade = "2";
             judgeGO = "1";
+            size = orderConfig.antiOrderSize;
           }
         }
 
-        /*小さいのがBFでプラスなら、BF買い、CC売り
-        if(0>1&&diffPrice>0&&Math.abs(diffPrice)<diffFlat&&Math.abs(minOrderSizeBTC)>=minOrderSizeBTCconfig){
-            if(Math.min(BFassetBTC, CCassetBTC)==BFassetBTC&&minOrderSizeBTC>=0){
-                arbitrageOrderType = "BFBuyCCSell";
-                normalTrade = 2;
-            }else if(Math.min(BFassetBTC, CCassetBTC)==BFassetBTC&&minOrderSizeBTC<0){
-                arbitrageOrderType = "CCBuyBFSell";
-                normalTrade = 2;
-            }else if(Math.min(BFassetBTC, CCassetBTC)==CCassetBTC&&minOrderSizeBTC>=0){
-              arbitrageOrderType = "CCBuyBFSell";
-              normalTrade = 2;
-            }else if(Math.min(BFassetBTC, CCassetBTC)==CCassetBTC&&minOrderSizeBTC<0){
-              arbitrageOrderType = "BFBuyCCSell";
-              normalTrade = 2;
-            }
-            if(normalTrade==2){
-              console.log("here3")
-              judgeGO=1;
-              size=Math.abs(minOrderSizeBTC);
-            }
-        }
-        */
-        //if(diffPer<=0.0005||diffPer>=0.005){
-          //console.log(JSON.stringify(logPrice1))
-          //console.log(JSON.stringify(logPrice2))
           let logDate = new Date();
           console.log(logDate + "normalTrade:"+normalTrade+" type:"+arbitrageOrderType
            + " diffBF-CC:"+(Math.round(diffPerArray.diffPerBFminusCC * 10000) / 100)
@@ -356,8 +332,6 @@ function event() {
            + " diffQX-CC:"+(Math.round(diffPerArray.diffPerQXminusCC * 10000) / 100)
            +" judegeGo:"+judgeGO)
           callOrderFunction.getDiff(BFPrice,CCPrice,zaifPrice);
-        //}
-        // if(judgeGO=="1"){console.log("minOrderSizeBTC"+minOrderSizeBTC)} //0.01
       }
 
       //3/20ここまでテスト完了
@@ -382,7 +356,6 @@ function event() {
           let testorderPriceQX = "";
           let prodorderPriceCC = "";
           let prodorderPriceQX = "";
-
 
           if (arbitrageOrderType === "BFBuyCCSell"){
             //side

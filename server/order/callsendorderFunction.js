@@ -223,6 +223,14 @@ module.exports = {
       CCBTCPriceForCheck = Number(CCBTCPriceForCheck);
       QXBTCPriceForCheck = Number(QXBTCPriceForCheck);
 
+      let maxBTCExchangeArray = {};
+      maxBTCExchangeArray.push(BFBTCPriceForCheck);
+      maxBTCExchangeArray.push(CCBTCPriceForCheck);
+      maxBTCExchangeArray.push(QXBTCPriceForCheck);
+
+      //{BFBTCPriceForCheck,CCBTCPriceForCheck,QXBTCPriceForCheck}
+      console.log(maxBTCExchangeArray)
+
       if(maxBTCExchange-minBTCExchange>=0.1){
           if(maxBTCExchange===BFBTCPriceForCheck&&minBTCExchange===CCBTCPriceForCheck&&diffPriceBFminusCC>diffFlat){
             arbitrageOrderTypeB = "CCBuyBFSell";
@@ -236,7 +244,7 @@ module.exports = {
           }else if(maxBTCExchange===CCBTCPriceForCheck&&minBTCExchange===QXBTCPriceForCheck&&diffPriceCCminusQX>diffFlat){
             arbitrageOrderTypeB = "QXBuyCCSell";
             orderGOAntiB = "1";
-          }else if(maxBTCExchange===QXBTCPriceForCheck&&minBTCExchange===BFBTCPriceForCheck&&diffPriceQXminusBF>diffFlat-500){
+          }else if(maxBTCExchange===QXBTCPriceForCheck&&minBTCExchange===BFBTCPriceForCheck&&diffPriceQXminusBF>diffFlat){
             arbitrageOrderTypeB = "BFBuyQXSell";
             orderGOAntiB = "1";
           }else if(maxBTCExchange===QXBTCPriceForCheck&&minBTCExchange===CCBTCPriceForCheck&&diffPriceQXminusCC>diffFlat){
@@ -711,22 +719,59 @@ module.exports = {
         bfOrderOK = childOrderID;
         bfStatus = status;
       };
-      sendOrderBF.sendOrder(marketLimitBF, sideBF, orderPriceBF, size, callback5)
+      let callbackTestQX = function(stopQXc){
+        stopQX = stopQXc;
+      }
+      this.orderTestQX(callbackTestQX);
       setTimeout(function(){
-        if(typeof bfOrderOK !== 'undefined'){
-          console.log("QX発注")
-          sendOrderQX.sendOrder(sideQX, orderPriceQX, size);
-        }else{
-          console.log("BF発注失敗")
+        if(stopQX === ""){
+          sendOrderBF.sendOrder(marketLimitBF, sideBF, orderPriceBF, size, callback5)
+          setTimeout(function(){
+            if(typeof bfOrderOK !== 'undefined'){
+              console.log("QX発注")
+              sendOrderQX.sendOrder(sideQX, orderPriceQX, size);
+            }else{
+              console.log("BF発注失敗")
+            }
+          },1500);
+          console.log("order実行");
         }
-      },1500);
-      console.log("order実行");
+      },1200)
     },
     sendOrderCCandQX: function(size, sideCC, orderPriceCC, sideQX, orderPriceQX){
-      console.log("QX発注")
-      sendOrderQX.sendOrder(sideQX,orderPriceQX, size);
-      console.log("CC発注")
-      sendOrderCC.sendOrder(sideCC,orderPriceCC, size);
-      console.log("order実行");
+      let callbackTestQX = function(stopQXc){
+        stopQX = stopQXc;
+      }
+      this.orderTestQX(callbackTestQX);
+      setTimeout(function(){
+        if(stopQX === ""){
+          console.log("QX発注");
+          sendOrderQX.sendOrder(sideQX,orderPriceQX, size);
+          console.log("CC発注");
+          sendOrderCC.sendOrder(sideCC,orderPriceCC, size);
+          console.log("order実行");
+        }
+      },1200)
     },
+    orderTestQX: function(callbackTestQX){
+      sendOrderQX.sendOrder2("buy", 300000, 0.01);
+
+      let orderID = "";
+      let stopQX = "";
+      let callbackGetOrder = function(orderIDb, stopQXb){
+        orderID = orderIDb;
+        stopQX = stopQXb;
+      };
+      setTimeout(function(){
+        sendOrderQX.getOrder(callbackGetOrder);
+        setTimeout(function(){
+          console.log(orderID)
+          if(orderID !== ""){
+            sendOrderQX.cancelOrder(orderID);
+          }
+          callbackTestQX(stopQX)
+        },600)
+
+      },500)
+    }
 };
