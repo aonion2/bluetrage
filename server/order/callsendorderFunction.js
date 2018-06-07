@@ -7,7 +7,6 @@ let sendOrderZaif = require('./sendOrderZaif.js');
 let sendOrderCC = require('./sendOrderCC.js');
 let sendOrderQX = require('./sendOrderQX.js');
 let callorderBF = require('./callsendorderBF.js')
-let callOrderFunction = require('./callsendorderFunction.js');
 
 module.exports = {
     getPrice: function(callbackExchangePrice){
