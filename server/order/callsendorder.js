@@ -200,7 +200,7 @@ function event() {
         QXPriceLower = 970000;
         QXPriceUpper = 980000;
         //*/
-        //3. BF > CC > QX
+        /*3. BF > CC > QX
         BFPriceLower = 990000;
         BFPriceUpper = 993000;
         CCPriceLower = 970000;
@@ -487,7 +487,7 @@ function event() {
           message = "本番発注です"
         }
 
-        if(testMode=='2'){
+        if(testMode=='1'){
             let orderInfoForTest = {judgeGO:judgeGO,assetCheck:assetCheck,sideCC:sideCC,orderPriceCC:orderPriceCC,
             size:size,sideBF:sideBF,orderPriceBF:orderPriceBF,sideQX:sideQX,orderPriceQX:orderPriceQX}
             logOrderInfoForTest.push(orderInfoForTest)
