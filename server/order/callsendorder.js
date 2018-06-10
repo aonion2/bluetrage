@@ -7,6 +7,22 @@ let assetBF = require('../asset/assetBitFlyer.js');
 let fs = require('fs');
 let orderConfig = JSON.parse(fs.readFileSync('../../config/orderConfig.json'));
 
+/*
+let Log4js = require('log4js');
+
+Log4js.configure('../../config/log-config.json');
+
+// ログ出力
+let systemLogger = Log4js.getLogger('system');
+let accessLogger = Log4js.getLogger('access');
+let errorLogger = Log4js.getLogger('error');
+
+// Informationログを出力する
+systemLogger.info('this is system log!!!');
+accessLogger.info('this is access log!!!');
+errorLogger.info('this is error log!!!');
+*/
+
 //Choose arbitrage type
 //1:ZaifがBitflyerより高い。調整（BTCをZaif->bitflyer）（bitflyer:Buy, Zaif:Sell）
 //2:BitflyerがZaifより高い。調整（BTCをbitflyer->Zaif）（bitflyer:Sell, Zaif:Buy）
@@ -232,7 +248,7 @@ function event() {
         QXPriceLower = 970000;
         QXPriceUpper = 980000;
         //*/
-        /*7. CC > BF > QX
+        //7. CC > BF > QX
         BFPriceLower = 950000;
         BFPriceUpper = 960000;
         CCPriceLower = 990000;
@@ -487,7 +503,7 @@ function event() {
           message = "本番発注です"
         }
 
-        if(testMode=='1'){
+        if(testMode=='2'){
             let orderInfoForTest = {judgeGO:judgeGO,assetCheck:assetCheck,sideCC:sideCC,orderPriceCC:orderPriceCC,
             size:size,sideBF:sideBF,orderPriceBF:orderPriceBF,sideQX:sideQX,orderPriceQX:orderPriceQX}
             logOrderInfoForTest.push(orderInfoForTest)
