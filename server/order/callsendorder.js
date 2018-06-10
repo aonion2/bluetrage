@@ -248,7 +248,7 @@ function event() {
         QXPriceLower = 970000;
         QXPriceUpper = 980000;
         //*/
-        //7. CC > BF > QX
+        /*7. CC > BF > QX
         BFPriceLower = 950000;
         BFPriceUpper = 960000;
         CCPriceLower = 990000;
