@@ -7,6 +7,8 @@ let sendOrderZaif = require('./sendOrderZaif.js');
 let sendOrderCC = require('./sendOrderCC.js');
 let sendOrderQX = require('./sendOrderQX.js');
 let callorderBF = require('./callsendorderBF.js')
+let fs = require('fs');
+let orderConfig = JSON.parse(fs.readFileSync('../../config/orderConfig.json'));
 
 module.exports = {
     getPrice: function(callbackExchangePrice){
@@ -223,6 +225,7 @@ module.exports = {
       CCBTCPriceForCheck = Number(CCBTCPriceForCheck);
       QXBTCPriceForCheck = Number(QXBTCPriceForCheck);
 
+      /*
       let maxBTCExchangeArray = {};
       maxBTCExchangeArray.push(BFBTCPriceForCheck);
       maxBTCExchangeArray.push(CCBTCPriceForCheck);
@@ -230,6 +233,7 @@ module.exports = {
 
       //{BFBTCPriceForCheck,CCBTCPriceForCheck,QXBTCPriceForCheck}
       console.log(maxBTCExchangeArray)
+      */
 
       if(maxBTCExchange-minBTCExchange>=0.1){
           if(maxBTCExchange===BFBTCPriceForCheck&&minBTCExchange===CCBTCPriceForCheck&&diffPriceBFminusCC>diffFlat){
@@ -341,8 +345,8 @@ module.exports = {
       },2500);
     },
     sendOrderBFandZaif: function(sideZaif,orderPriceZaif, size, marketLimitBF, sideBF, orderPriceBF){
-      var zaifOrderOK = "";
-      var callback2 = function(status){
+      let zaifOrderOK = "";
+      let callback2 = function(status){
         zaifOrderOK = status;
       };
 
@@ -623,7 +627,7 @@ module.exports = {
       if(BFSellable==="1"&&CCBuyable==="1"){
         diffPriceBFminusCC = priceInfo[0].BFPriceLower-priceInfo[0].CCPriceUpper;
         diffPerBFminusCC = diffPriceBFminusCC/priceInfo[0].CCPriceUpper;
-        if(diffPriceBFminusCC>0){
+        if(diffPriceBFminusCC>0 && diffPerBFminusCC > orderConfig.diffGOBFCC){
           diffContent = {};
           diffContent = {"diff":"CCBuyBFSell", "diffPrice":diffPriceBFminusCC, "diffPer":diffPerBFminusCC, "sellable":BFSellable, "buyable":CCBuyable}
           diffArray.push(diffContent);
@@ -633,7 +637,7 @@ module.exports = {
       if(CCSellable==="1"&&BFBuyable==="1"){
         diffPriceCCminusBF= priceInfo[0].CCPriceLower-priceInfo[0].BFPriceUpper;
         diffPerCCminusBF = diffPriceCCminusBF/priceInfo[0].BFPriceUpper;
-        if(diffPriceCCminusBF>0){
+        if(diffPriceCCminusBF>0 && diffPerCCminusBF > orderConfig.diffGOBFCC){
           diffContent = {};
           diffContent = {"diff":"BFBuyCCSell", "diffPrice":diffPriceCCminusBF, "diffPer":diffPerCCminusBF, "sellable":CCSellable, "buyable":BFBuyable}
           diffArray.push(diffContent);
@@ -643,7 +647,7 @@ module.exports = {
       if(BFSellable==="1"&&QXBuyable==="1"){
         diffPriceBFminusQX = priceInfo[0].BFPriceLower-priceInfo[0].QXPriceUpper;
         diffPerBFminusQX = diffPriceBFminusQX/priceInfo[0].QXPriceUpper;
-        if(diffPriceBFminusQX>0){
+        if(diffPriceBFminusQX>0 && diffPerBFminusQX > orderConfig.diffGOBFQX){
           diffContent = {};
           diffContent = {"diff":"QXBuyBFSell", "diffPrice":diffPriceBFminusQX, "diffPer":diffPerBFminusQX, "sellable":BFSellable, "buyable":QXBuyable}
           diffArray.push(diffContent);
@@ -653,7 +657,7 @@ module.exports = {
       if(QXSellable==="1"&&BFBuyable==="1"){
         diffPriceQXminusBF= priceInfo[0].QXPriceLower-priceInfo[0].BFPriceUpper;
         diffPerQXminusBF = diffPriceQXminusBF/priceInfo[0].BFPriceUpper;
-        if(diffPriceQXminusBF>0){
+        if(diffPriceQXminusBF>0 && diffPerQXminusBF > orderConfig.diffGOBFQX){
           diffContent = {};
           diffContent = {"diff":"BFBuyQXSell", "diffPrice":diffPriceQXminusBF, "diffPer":diffPerQXminusBF, "sellable":QXSellable, "buyable":BFBuyable}
           diffArray.push(diffContent);
@@ -663,7 +667,7 @@ module.exports = {
       if(QXSellable==="1"&&CCBuyable==="1"){
         diffPriceQXminusCC = priceInfo[0].QXPriceLower-priceInfo[0].CCPriceUpper;
         diffPerQXminusCC = diffPriceQXminusCC/priceInfo[0].CCPriceUpper;
-        if(diffPriceQXminusCC>0){
+        if(diffPriceQXminusCC>0 && diffPerQXminusCC > orderConfig.diffGOCCQX){
           diffContent = {};
           diffContent = {"diff":"CCBuyQXSell", "diffPrice":diffPriceQXminusCC, "diffPer":diffPerQXminusCC, "sellable":QXSellable, "buyable":CCBuyable}
           diffArray.push(diffContent);
@@ -672,7 +676,7 @@ module.exports = {
       if(CCSellable==="1"&&QXBuyable==="1"){
         diffPriceCCminusQX= priceInfo[0].CCPriceLower-priceInfo[0].QXPriceUpper;
         diffPerCCminusQX = diffPriceCCminusQX/priceInfo[0].QXPriceUpper;
-        if(diffPriceCCminusQX>0){
+        if(diffPriceCCminusQX>0 && diffPerCCminusQX > orderConfig.diffGOCCQX){
           diffContent = {};
           diffContent = {"diff":"QXBuyCCSell", "diffPrice":diffPriceCCminusQX, "diffPer":diffPerCCminusQX, "sellable":CCSellable, "buyable":QXBuyable}
           diffArray.push(diffContent);
@@ -736,7 +740,7 @@ module.exports = {
           },1500);
           console.log("order実行");
         }
-      },1200)
+      },500)
     },
     sendOrderCCandQX: function(size, sideCC, orderPriceCC, sideQX, orderPriceQX){
       let callbackTestQX = function(stopQXc){
@@ -751,27 +755,18 @@ module.exports = {
           sendOrderCC.sendOrder(sideCC,orderPriceCC, size);
           console.log("order実行");
         }
-      },1200)
+      },500)
     },
     orderTestQX: function(callbackTestQX){
-      sendOrderQX.sendOrder2("buy", 300000, 0.01);
-
-      let orderID = "";
       let stopQX = "";
-      let callbackGetOrder = function(orderIDb, stopQXb){
-        orderID = orderIDb;
-        stopQX = stopQXb;
+      let stopQXc = "";
+      let callbackTestOrderQX = function(stopQXc){
+        stopQX = stopQXc
       };
-      setTimeout(function(){
-        sendOrderQX.getOrder(callbackGetOrder);
-        setTimeout(function(){
-          console.log(orderID)
-          if(orderID !== ""){
-            sendOrderQX.cancelOrder(orderID);
-          }
-          callbackTestQX(stopQX)
-        },600)
+      sendOrderQX.testOrder(callbackTestOrderQX);
 
-      },500)
+      setTimeout(function(){
+        callbackTestQX(stopQX)
+      },200)
     }
 };
