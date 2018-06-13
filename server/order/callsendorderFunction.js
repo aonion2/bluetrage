@@ -69,27 +69,99 @@ module.exports = {
     引数:
     BFBTCPriceForCheck
     CCBTCPriceForCheck
-
-
-
-
     */
     getAntiTrade: function(BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat, callbackAntiTrade){
 
       let orderGOAntiB = "";
       let arbitrageOrderTypeB = "";
-      let diffPriceBFminusCC = priceInfo[0].BFPriceLower-priceInfo[0].CCPriceUpper;
-      let diffPriceCCminusBF = priceInfo[0].CCPriceLower-priceInfo[0].BFPriceUpper;
-      let diffPriceBFminusQX = priceInfo[0].BFPriceLower-priceInfo[0].QXPriceUpper;
-      let diffPriceQXminusBF = priceInfo[0].QXPriceLower-priceInfo[0].BFPriceUpper;
-      let diffPriceQXminusCC = priceInfo[0].QXPriceLower-priceInfo[0].CCPriceUpper;
-      let diffPriceCCminusQX = priceInfo[0].CCPriceLower-priceInfo[0].QXPriceUpper;
 
       //For test
-      /*Case1 Go and BF > QX > CC
+      /*Case1,2 Go and BF > QX > CC
       BFBTCPriceForCheck = 0.4
       QXBTCPriceForCheck = 0.3
       CCBTCPriceForCheck = 0.2
+      //*/
+      /*Case3,4 Go and BF > CC > QX
+      BFBTCPriceForCheck = 0.4
+      QXBTCPriceForCheck = 0.2
+      CCBTCPriceForCheck = 0.3
+      //*/
+      /*Case5,6 Go and CC > BF > QX
+      BFBTCPriceForCheck = 0.3
+      QXBTCPriceForCheck = 0.2
+      CCBTCPriceForCheck = 0.4
+      //*/
+      /*Case7,8 Go and CC > QX > BF
+      BFBTCPriceForCheck = 0.2
+      QXBTCPriceForCheck = 0.3
+      CCBTCPriceForCheck = 0.4
+      //*/
+      /*Case9,10 Go and QX > CC > BF
+      BFBTCPriceForCheck = 0.2
+      QXBTCPriceForCheck = 0.4
+      CCBTCPriceForCheck = 0.3
+      //*/
+      /*Case11,12 Go and QX > BF > CC
+      BFBTCPriceForCheck = 0.3
+      QXBTCPriceForCheck = 0.4
+      CCBTCPriceForCheck = 0.2
+      //*/
+      /*Case13,14 Go and BF > QX > CC
+      BFBTCPriceForCheck = 0.5
+      QXBTCPriceForCheck = 0.15
+      CCBTCPriceForCheck = 0.1
+      //*/
+      /*Case14,15 Go and BF > QX > CC
+      BFBTCPriceForCheck = 0.35
+      QXBTCPriceForCheck = 0.3
+      CCBTCPriceForCheck = 0.1
+      //*/
+
+      let BTCExchangeArray = [
+        {"exchange":"BF","price":BFBTCPriceForCheck},
+        {"exchange":"CC","price":CCBTCPriceForCheck},
+        {"exchange":"QX","price":QXBTCPriceForCheck}
+      ];
+      BTCExchangeArray.sort(function(a,b){
+        if(a.price < b.price) return -1;
+        if(a.price > b.price) return 1;
+        return 0;
+      })
+
+      minBTCExchange = BTCExchangeArray[0].price;
+      midBTCExchange = BTCExchangeArray[1].price;
+      maxBTCExchange = BTCExchangeArray[2].price;
+
+      let callbackAntiTradeChild = function(orderGOAntiC,arbitrageOrderTypeC){
+          orderGOAntiB = orderGOAntiC;
+          arbitrageOrderTypeB = arbitrageOrderTypeC;
+      };
+
+      //MaxとMinの差が大きい場合
+      if(maxBTCExchange-minBTCExchange>=0.1){
+        this.getAntiTradeChild(maxBTCExchange,minBTCExchange,BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat, callbackAntiTradeChild)
+      //MaxとMidの差が大きい場合
+      }
+      if(orderGOAntiB !== "1" && maxBTCExchange-midBTCExchange>=0.1 && midBTCExchange < (orderConfig.TotalBTCAsset / 3)){
+        this.getAntiTradeChild(maxBTCExchange,midBTCExchange,BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat, callbackAntiTradeChild)
+      //MinとMidの差が大きい場合
+      }
+      if(orderGOAntiB !== "1" && midBTCExchange-minBTCExchange>=0.1 && midBTCExchange > (orderConfig.TotalBTCAsset / 3)){
+        this.getAntiTradeChild(midBTCExchange,minBTCExchange,BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat, callbackAntiTradeChild)
+      }
+      callbackAntiTrade(orderGOAntiB, arbitrageOrderTypeB)
+    },
+    getAntiTradeChild: function(highPrice, lowPrice, BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat, callbackAntiTradeChild){
+      let orderGOAntiC = "";
+      let arbitrageOrderTypeC = "";
+      let diffPriceBFminusCC = priceInfo[0].diffPriceBFminusCC;
+      let diffPriceCCminusBF = priceInfo[0].diffPriceCCminusBF;
+      let diffPriceBFminusQX = priceInfo[0].diffPriceBFminusQX;
+      let diffPriceQXminusBF = priceInfo[0].diffPriceQXminusBF;
+      let diffPriceQXminusCC = priceInfo[0].diffPriceQXminusCC;
+      let diffPriceCCminusQX = priceInfo[0].diffPriceCCminusQX;
+
+      /*Case1 Go and BF > QX > CC
       diffPriceBFminusCC = 700
       diffPriceCCminusBF = 700
       diffPriceQXminusCC = 700
@@ -98,9 +170,6 @@ module.exports = {
       diffPriceCCminusQX = 700
       //*/
       /*Case2 Go and BF > QX > CC
-      BFBTCPriceForCheck = 0.4
-      QXBTCPriceForCheck = 0.3
-      CCBTCPriceForCheck = 0.2
       diffPriceBFminusCC = 400
       diffPriceCCminusBF = 700
       diffPriceQXminusCC = 700
@@ -109,9 +178,6 @@ module.exports = {
       diffPriceCCminusQX = 700
       //*/
       /*Case3 Go and BF > CC > QX
-      BFBTCPriceForCheck = 0.4
-      QXBTCPriceForCheck = 0.2
-      CCBTCPriceForCheck = 0.3
       diffPriceBFminusCC = 700
       diffPriceCCminusBF = 700
       diffPriceQXminusCC = 700
@@ -120,9 +186,6 @@ module.exports = {
       diffPriceCCminusQX = 700
       //*/
       /*Case4 Go and BF > CC > QX
-      BFBTCPriceForCheck = 0.4
-      QXBTCPriceForCheck = 0.2
-      CCBTCPriceForCheck = 0.3
       diffPriceBFminusCC = 700
       diffPriceCCminusBF = 700
       diffPriceQXminusCC = 700
@@ -131,9 +194,6 @@ module.exports = {
       diffPriceCCminusQX = 700
       //*/
       /*Case5 Go and CC > BF > QX
-      BFBTCPriceForCheck = 0.3
-      QXBTCPriceForCheck = 0.2
-      CCBTCPriceForCheck = 0.4
       diffPriceBFminusCC = 700
       diffPriceCCminusBF = 700
       diffPriceQXminusCC = 700
@@ -142,9 +202,6 @@ module.exports = {
       diffPriceCCminusQX = 700
       //*/
       /*Case6 Go and CC > BF > QX
-      BFBTCPriceForCheck = 0.3
-      QXBTCPriceForCheck = 0.2
-      CCBTCPriceForCheck = 0.4
       diffPriceBFminusCC = 700
       diffPriceCCminusBF = 700
       diffPriceQXminusCC = 700
@@ -153,9 +210,6 @@ module.exports = {
       diffPriceCCminusQX = 400
       //*/
       /*Case7 Go and CC > QX > BF
-      BFBTCPriceForCheck = 0.2
-      QXBTCPriceForCheck = 0.3
-      CCBTCPriceForCheck = 0.4
       diffPriceBFminusCC = 700
       diffPriceCCminusBF = 700
       diffPriceQXminusCC = 700
@@ -164,9 +218,6 @@ module.exports = {
       diffPriceCCminusQX = 700
       //*/
       /*Case8 Go and CC > QX > BF
-      BFBTCPriceForCheck = 0.2
-      QXBTCPriceForCheck = 0.3
-      CCBTCPriceForCheck = 0.4
       diffPriceBFminusCC = 700
       diffPriceCCminusBF = 400
       diffPriceQXminusCC = 700
@@ -175,9 +226,6 @@ module.exports = {
       diffPriceCCminusQX = 400
       //*/
       /*Case9 Go and QX > CC > BF
-      BFBTCPriceForCheck = 0.2
-      QXBTCPriceForCheck = 0.4
-      CCBTCPriceForCheck = 0.3
       diffPriceBFminusCC = 700
       diffPriceCCminusBF = 700
       diffPriceQXminusCC = 700
@@ -186,9 +234,6 @@ module.exports = {
       diffPriceCCminusQX = 700
       //*/
       /*Case10 Go and QX > CC > BF
-      BFBTCPriceForCheck = 0.2
-      QXBTCPriceForCheck = 0.4
-      CCBTCPriceForCheck = 0.3
       diffPriceBFminusCC = 700
       diffPriceCCminusBF = 700
       diffPriceQXminusCC = 700
@@ -197,9 +242,6 @@ module.exports = {
       diffPriceCCminusQX = 400
       //*/
       /*Case11 Go and QX > BF > CC
-      BFBTCPriceForCheck = 0.3
-      QXBTCPriceForCheck = 0.4
-      CCBTCPriceForCheck = 0.2
       diffPriceBFminusCC = 700
       diffPriceCCminusBF = 700
       diffPriceQXminusCC = 700
@@ -208,9 +250,6 @@ module.exports = {
       diffPriceCCminusQX = 700
       //*/
       /*Case12 Go and QX > BF > CC
-      BFBTCPriceForCheck = 0.3
-      QXBTCPriceForCheck = 0.4
-      CCBTCPriceForCheck = 0.2
       diffPriceBFminusCC = 700
       diffPriceCCminusBF = 700
       diffPriceQXminusCC = 400
@@ -218,45 +257,59 @@ module.exports = {
       diffPriceBFminusQX = 700
       diffPriceCCminusQX = 400
       //*/
+      /*Case13 Go and BF > QX > CC
+      diffPriceBFminusCC = 400
+      diffPriceCCminusBF = 700
+      diffPriceQXminusCC = 700
+      diffPriceQXminusBF = 700
+      diffPriceBFminusQX = 700
+      diffPriceCCminusQX = 700
+      //*/
+      /*Case14 Go and BF > QX > CC
+      diffPriceBFminusCC = 400
+      diffPriceCCminusBF = 700
+      diffPriceQXminusCC = 700
+      diffPriceQXminusBF = 700
+      diffPriceBFminusQX = 400
+      diffPriceCCminusQX = 700
+      //*/
+      /*Case15 Go and BF > QX > CC
+      diffPriceBFminusCC = 400
+      diffPriceCCminusBF = 700
+      diffPriceQXminusCC = 700
+      diffPriceQXminusBF = 700
+      diffPriceBFminusQX = 700
+      diffPriceCCminusQX = 700
+      //*/
+      /*Case16 Go and BF > QX > CC
+      diffPriceBFminusCC = 400
+      diffPriceCCminusBF = 700
+      diffPriceQXminusCC = 400
+      diffPriceQXminusBF = 700
+      diffPriceBFminusQX = 700
+      diffPriceCCminusQX = 700
+      //*/
 
-      maxBTCExchange = Math.max(BFBTCPriceForCheck,CCBTCPriceForCheck,QXBTCPriceForCheck);
-      minBTCExchange = Math.min(BFBTCPriceForCheck,CCBTCPriceForCheck,QXBTCPriceForCheck);
-      BFBTCPriceForCheck = Number(BFBTCPriceForCheck);
-      CCBTCPriceForCheck = Number(CCBTCPriceForCheck);
-      QXBTCPriceForCheck = Number(QXBTCPriceForCheck);
-
-      /*
-      let maxBTCExchangeArray = {};
-      maxBTCExchangeArray.push(BFBTCPriceForCheck);
-      maxBTCExchangeArray.push(CCBTCPriceForCheck);
-      maxBTCExchangeArray.push(QXBTCPriceForCheck);
-
-      //{BFBTCPriceForCheck,CCBTCPriceForCheck,QXBTCPriceForCheck}
-      console.log(maxBTCExchangeArray)
-      */
-
-      if(maxBTCExchange-minBTCExchange>=0.1){
-          if(maxBTCExchange===BFBTCPriceForCheck&&minBTCExchange===CCBTCPriceForCheck&&diffPriceBFminusCC>diffFlat){
-            arbitrageOrderTypeB = "CCBuyBFSell";
-            orderGOAntiB = "1";
-          }else if(maxBTCExchange===BFBTCPriceForCheck&&minBTCExchange===QXBTCPriceForCheck&&diffPriceBFminusQX>diffFlat){
-            arbitrageOrderTypeB = "QXBuyBFSell";
-            orderGOAntiB = "1";
-          }else if(maxBTCExchange===CCBTCPriceForCheck&&minBTCExchange===BFBTCPriceForCheck&&diffPriceCCminusBF>diffFlat){
-            arbitrageOrderTypeB = "BFBuyCCSell";
-            orderGOAntiB = "1";
-          }else if(maxBTCExchange===CCBTCPriceForCheck&&minBTCExchange===QXBTCPriceForCheck&&diffPriceCCminusQX>diffFlat){
-            arbitrageOrderTypeB = "QXBuyCCSell";
-            orderGOAntiB = "1";
-          }else if(maxBTCExchange===QXBTCPriceForCheck&&minBTCExchange===BFBTCPriceForCheck&&diffPriceQXminusBF>diffFlat){
-            arbitrageOrderTypeB = "BFBuyQXSell";
-            orderGOAntiB = "1";
-          }else if(maxBTCExchange===QXBTCPriceForCheck&&minBTCExchange===CCBTCPriceForCheck&&diffPriceQXminusCC>diffFlat){
-            arbitrageOrderTypeB = "CCBuyQXSell";
-            orderGOAntiB = "1";
-          }
+      if(highPrice===BFBTCPriceForCheck&&lowPrice===CCBTCPriceForCheck&&diffPriceBFminusCC>diffFlat){
+        arbitrageOrderTypeC = "CCBuyBFSell";
+        orderGOAntiC = "1";
+      }else if(highPrice===BFBTCPriceForCheck&&lowPrice===QXBTCPriceForCheck&&diffPriceBFminusQX>diffFlat){
+        arbitrageOrderTypeC = "QXBuyBFSell";
+        orderGOAntiC = "1";
+      }else if(highPrice===CCBTCPriceForCheck&&lowPrice===BFBTCPriceForCheck&&diffPriceCCminusBF>diffFlat){
+        arbitrageOrderTypeC = "BFBuyCCSell";
+        orderGOAntiC = "1";
+      }else if(highPrice===CCBTCPriceForCheck&&lowPrice===QXBTCPriceForCheck&&diffPriceCCminusQX>diffFlat){
+        arbitrageOrderTypeC = "QXBuyCCSell";
+        orderGOAntiC = "1";
+      }else if(highPrice===QXBTCPriceForCheck&&lowPrice===BFBTCPriceForCheck&&diffPriceQXminusBF>diffFlat){
+        arbitrageOrderTypeC = "BFBuyQXSell";
+        orderGOAntiC = "1";
+      }else if(highPrice===QXBTCPriceForCheck&&lowPrice===CCBTCPriceForCheck&&diffPriceQXminusCC>diffFlat){
+        arbitrageOrderTypeC = "CCBuyQXSell";
+        orderGOAntiC = "1";
       }
-      callbackAntiTrade(orderGOAntiB, arbitrageOrderTypeB)
+      callbackAntiTradeChild(orderGOAntiC, arbitrageOrderTypeC)
     },
     checkCCAsset: function(BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, TotalBTCAsset, callbackCheckCCAsset){
       let assetCCCheckB = "";

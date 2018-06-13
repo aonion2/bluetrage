@@ -315,7 +315,13 @@ function event() {
             "CCPriceLower":CCPriceLower,
             "CCPriceUpper":CCPriceUpper,
             "QXPriceLower":QXPriceLower,
-            "QXPriceUpper":QXPriceUpper
+            "QXPriceUpper":QXPriceUpper,
+            "diffPriceBFminusCC":BFPriceLower-CCPriceUpper,
+            "diffPriceCCminusBF":CCPriceLower-BFPriceUpper,
+            "diffPriceBFminusQX":BFPriceLower-QXPriceUpper,
+            "diffPriceQXminusBF":QXPriceLower-BFPriceUpper,
+            "diffPriceQXminusCC":QXPriceLower-CCPriceUpper,
+            "diffPriceCCminusQX":CCPriceLower-QXPriceUpper
         }
         priceInfo.push(priceInfoCulumn)
         callOrderFunction.getArbitrageTrade(priceInfo, diffGO, assetCheckForArbitrage, callbackArbitrageTrade);
@@ -503,7 +509,7 @@ function event() {
           message = "本番発注です"
         }
 
-        if(testMode=='2'){
+        if(testMode=='1'){
             let orderInfoForTest = {judgeGO:judgeGO,assetCheck:assetCheck,sideCC:sideCC,orderPriceCC:orderPriceCC,
             size:size,sideBF:sideBF,orderPriceBF:orderPriceBF,sideQX:sideQX,orderPriceQX:orderPriceQX}
             logOrderInfoForTest.push(orderInfoForTest)
