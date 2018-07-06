@@ -1,33 +1,40 @@
-let assetZaif = require('../asset/assetZaif.js');
-let assetBF = require('../asset/assetBitFlyer.js');
-let assetCC = require('../asset/assetCoinCheck.js');
-let assetQX = require('../asset/assetQuoinex.js');
-let sendOrderBF = require('./sendOrderBF.js');
-let sendOrderZaif = require('./sendOrderZaif.js');
-let sendOrderCC = require('./sendOrderCC.js');
-let sendOrderQX = require('./sendOrderQX.js');
-let callorderBF = require('./callsendorderBF.js')
-let fs = require('fs');
-let orderConfig = JSON.parse(fs.readFileSync('../../config/orderConfig.json'));
+const assetZaif = require('../asset/assetZaif.js');
+const assetBF = require('../asset/assetBitFlyer.js');
+const assetCC = require('../asset/assetCoinCheck.js');
+const assetQX = require('../asset/assetQuoinex.js');
+const sendOrderBF = require('./sendOrderBF.js');
+const sendOrderZaif = require('./sendOrderZaif.js');
+const sendOrderCC = require('./sendOrderCC.js');
+const sendOrderQX = require('./sendOrderQX.js');
+const callorderBF = require('./callsendorderBF.js')
+const fs = require('fs');
+const orderConfig = JSON.parse(fs.readFileSync('../../config/orderConfig.json'));
+
+let log4js = require('log4js');
+log4js.configure('../../config/log-config.json');
+
+let systemLogger = log4js.getLogger('system');
+let priceLogger = log4js.getLogger('price');
+let errorLogger = log4js.getLogger('error');
 
 module.exports = {
     getPrice: function(callbackExchangePrice){
       //Function1 現在値を取得
       //zaif
       let exchangePrice = [];
-      let callback = function(lastPrice){
+      const callback = function(lastPrice){
         exchangePrice[1] = {zaifPrice:lastPrice};
       };
       assetZaif.getZaifPrice(callback);
       //BF
-      let callback1 = function(lastPrice1,lowPrice,upperPrice){
+      const callback1 = function(lastPrice1,lowPrice,upperPrice){
         exchangePrice[0] = {BFPrice:lastPrice1};
         exchangePrice[3] = {BFPriceLower:lowPrice};
         exchangePrice[4] = {BFPriceUpper:upperPrice};
       };
       assetBF.getBFPrice(callback1);
       //Coincheck
-      let callbackGetCCPrice = function(lastPrice2,lowPrice2,upperPrice2){
+      const callbackGetCCPrice = function(lastPrice2,lowPrice2,upperPrice2){
         exchangePrice[2] = {CCPrice:lastPrice2};
         exchangePrice[5] = {CCPriceLower:lowPrice2};
         exchangePrice[6] = {CCPriceUpper:upperPrice2};
@@ -37,7 +44,7 @@ module.exports = {
         callbackExchangePrice(exchangePrice)
       },1000);
       //Quoinex
-      let callbackGetQXPrice = function(lastPrice3,lowPrice3,upperPrice3){
+      const callbackGetQXPrice = function(lastPrice3,lowPrice3,upperPrice3){
         exchangePrice[7] = {QXPrice:lastPrice3};
         exchangePrice[8] = {QXPriceLower:lowPrice3};
         exchangePrice[9] = {QXPriceUpper:upperPrice3};
@@ -62,7 +69,7 @@ module.exports = {
       diffCCandZaif = Math.abs(CCPrice-ZaifPrice);
       diffPerCCandZaif = (Math.round((diffCCandZaif/ZaifPrice) * 10000) / 100);
       pricelog2 = {diffBFandCC:diffBFandCC,diffPerBFandCC:diffPerBFandCC,diffBFandZaif:diffBFandZaif,diffPerBFandZaif:diffPerBFandZaif,diffCCandZaif:diffCCandZaif,diffPerCCandZaif:diffPerCCandZaif}
-      //console.log(JSON.stringify(pricelog2))
+      //systemLogger.info(JSON.stringify(pricelog2))
     },
     /*
     Method:getAntiTrade
@@ -132,26 +139,21 @@ module.exports = {
       midBTCExchange = BTCExchangeArray[1].price;
       maxBTCExchange = BTCExchangeArray[2].price;
 
-      let callbackAntiTradeChild = function(orderGOAntiC,arbitrageOrderTypeC){
-          orderGOAntiB = orderGOAntiC;
-          arbitrageOrderTypeB = arbitrageOrderTypeC;
-      };
-
       //MaxとMinの差が大きい場合
       if(maxBTCExchange-minBTCExchange>=0.1){
-        this.getAntiTradeChild(maxBTCExchange,minBTCExchange,BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat, callbackAntiTradeChild)
+        this.getAntiTradeChild(maxBTCExchange,minBTCExchange,BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat)
       //MaxとMidの差が大きい場合
       }
       if(orderGOAntiB !== "1" && maxBTCExchange-midBTCExchange>=0.1 && midBTCExchange < (orderConfig.TotalBTCAsset / 3)){
-        this.getAntiTradeChild(maxBTCExchange,midBTCExchange,BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat, callbackAntiTradeChild)
+        this.getAntiTradeChild(maxBTCExchange,midBTCExchange,BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat)
       //MinとMidの差が大きい場合
       }
       if(orderGOAntiB !== "1" && midBTCExchange-minBTCExchange>=0.1 && midBTCExchange > (orderConfig.TotalBTCAsset / 3)){
-        this.getAntiTradeChild(midBTCExchange,minBTCExchange,BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat, callbackAntiTradeChild)
+        this.getAntiTradeChild(midBTCExchange,minBTCExchange,BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat)
       }
       callbackAntiTrade(orderGOAntiB, arbitrageOrderTypeB)
     },
-    getAntiTradeChild: function(highPrice, lowPrice, BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat, callbackAntiTradeChild){
+    getAntiTradeChild: function(highPrice, lowPrice, BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, priceInfo, diffFlat){
       let orderGOAntiC = "";
       let arbitrageOrderTypeC = "";
       let diffPriceBFminusCC = priceInfo[0].diffPriceBFminusCC;
@@ -309,7 +311,7 @@ module.exports = {
         arbitrageOrderTypeC = "CCBuyQXSell";
         orderGOAntiC = "1";
       }
-      callbackAntiTradeChild(orderGOAntiC, arbitrageOrderTypeC)
+      return orderGOAntiC, arbitrageOrderTypeC;
     },
     checkCCAsset: function(BFBTCPriceForCheck, CCBTCPriceForCheck, QXBTCPriceForCheck, TotalBTCAsset, callbackCheckCCAsset){
       let assetCCCheckB = "";
@@ -368,26 +370,26 @@ module.exports = {
       exchangeAsset[5] ={};
       exchangeAsset[6] ={};
       exchangeAsset[7] ={};
-      let callback3 = function(jpyAssetZaif,btcAssetZaif){
+      const callback3 = (jpyAssetZaif,btcAssetZaif) => {
         exchangeAsset[0] = {jpyAssetZaif:jpyAssetZaif};
         exchangeAsset[1] = {btcAssetZaif:btcAssetZaif};
       };
-      assetZaif.getZaifAsset2(callback3);
+      //assetZaif.getZaifAsset2(callback3);
 
       //BitFlyer 資産残高を取得
-      let callback4 = function(jpyassetbf, btcassetbf){
+      const callback4 = (jpyassetbf, btcassetbf) => {
         exchangeAsset[2] = {jpyassetbf:jpyassetbf};
         exchangeAsset[3] = {btcassetbf:btcassetbf};
       };
       assetBF.getBFAsset(callback4);
 
-      let callbackGetCCAsset = function(jpyAssetCC,btcAssetCC){
+      const callbackGetCCAsset = (jpyAssetCC,btcAssetCC) => {
         exchangeAsset[4] = {jpyAssetCC:jpyAssetCC};
         exchangeAsset[5] = {btcAssetCC:btcAssetCC};
       };
       assetCC.getCCAsset(callbackGetCCAsset);
 
-      let callbackGetQXPrice = function(jpyAssetQX,btcAssetQX){
+      const callbackGetQXPrice = (jpyAssetQX,btcAssetQX) => {
         exchangeAsset[6] = {jpyAssetQX:jpyAssetQX};
         exchangeAsset[7] = {btcAssetQX:btcAssetQX};
       };
@@ -397,6 +399,51 @@ module.exports = {
         callbackAsset(exchangeAsset)
       },2500);
     },
+    getAssetRefactored: function(callbackAssets){
+      let Asset = function(JPYasset, BTCAsset){
+        this.JPYAsset = JPYasset;
+        this.BTCAsset = BTCAsset;
+        this.getAssetJPY = function(){
+          return `${this.JPYAsset}`;
+        };
+        this.getAssetBTC = function(){
+          return `${this.BTCAsset}`;
+        };
+      }
+
+      /*
+      Asset.prototype.getAssetJPY = function(){
+        return `${this.JPYAsset}`;
+      };
+      Asset.prototype.getAssetBTC = function(){
+        return `${this.BTCAsset}`;
+      };
+      */
+
+      let assetsBF = "";
+      let assetsCC = "";
+      let assetsQX = "";
+
+      //BitFlyer 資産残高を取得
+      const callback4 = (jpyassetbf, btcassetbf) => {
+        assetsBF = new Asset(jpyassetbf, btcassetbf);
+      };
+      assetBF.getBFAsset(callback4);
+
+      const callbackGetCCAsset = (jpyAssetCC, btcAssetCC) => {
+        assetsCC = new Asset(jpyAssetCC, btcAssetCC);
+      };
+      assetCC.getCCAsset(callbackGetCCAsset);
+
+      const callbackGetQXPrice = (jpyAssetQX, btcAssetQX) => {
+        assetsQX = new Asset(jpyAssetQX, btcAssetQX);
+      };
+      assetQX.getQXAsset(callbackGetQXPrice);
+
+      setTimeout(function(){
+        callbackAssets(assetsBF, assetsCC, assetsQX)
+      },2500);
+    },
     sendOrderBFandZaif: function(sideZaif,orderPriceZaif, size, marketLimitBF, sideBF, orderPriceBF){
       let zaifOrderOK = "";
       let callback2 = function(status){
@@ -404,58 +451,58 @@ module.exports = {
       };
 
       sendOrderZaif.sendOrderZaif(sideZaif,orderPriceZaif, size, callback2);
-      console.log("order実行");
+      systemLogger.info("order実行");
       //発注後5秒待って処理開始
       setTimeout(function(){
-          console.log("zaifOrderOK1"+zaifOrderOK);
+          systemLogger.info("zaifOrderOK1"+zaifOrderOK);
           if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
             setTimeout(function(){
-              console.log("zaifOrderOK2"+zaifOrderOK);
+              systemLogger.info("zaifOrderOK2"+zaifOrderOK);
               if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                 setTimeout(function(){
-                  console.log("zaifOrderOK3"+zaifOrderOK);
+                  systemLogger.info("zaifOrderOK3"+zaifOrderOK);
                   if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                     setTimeout(function(){
-                    console.log("zaifOrderOK4"+zaifOrderOK);
+                    systemLogger.info("zaifOrderOK4"+zaifOrderOK);
                     if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                         setTimeout(function(){
-                          console.log("zaifOrderOK5"+zaifOrderOK);
+                          systemLogger.info("zaifOrderOK5"+zaifOrderOK);
                           if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                             setTimeout(function(){
-                              console.log("zaifOrderOK6"+zaifOrderOK);
+                              systemLogger.info("zaifOrderOK6"+zaifOrderOK);
                               if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                                 setTimeout(function(){
-                                  console.log("zaifOrderOK7"+zaifOrderOK);
+                                  systemLogger.info("zaifOrderOK7"+zaifOrderOK);
                                   if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                                     setTimeout(function(){
-                                      console.log("zaifOrderOK8"+zaifOrderOK);
+                                      systemLogger.info("zaifOrderOK8"+zaifOrderOK);
                                       if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                                         setTimeout(function(){
-                                          console.log("zaifOrderOK9"+zaifOrderOK);
+                                          systemLogger.info("zaifOrderOK9"+zaifOrderOK);
                                           if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                                             setTimeout(function(){
-                                              console.log("zaifOrderOK10"+zaifOrderOK);
+                                              systemLogger.info("zaifOrderOK10"+zaifOrderOK);
                                               if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                                                 setTimeout(function(){
-                                                  console.log("zaifOrderOK12"+zaifOrderOK);
+                                                  systemLogger.info("zaifOrderOK12"+zaifOrderOK);
                                                   if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                                                     setTimeout(function(){
-                                                      console.log("zaifOrderOK15"+zaifOrderOK);
+                                                      systemLogger.info("zaifOrderOK15"+zaifOrderOK);
                                                       if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                                                         setTimeout(function(){
-                                                          console.log("zaifOrderOK18"+zaifOrderOK);
+                                                          systemLogger.info("zaifOrderOK18"+zaifOrderOK);
                                                           if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                                                             setTimeout(function(){
-                                                              console.log("zaifOrderOK21"+zaifOrderOK);
+                                                              systemLogger.info("zaifOrderOK21"+zaifOrderOK);
                                                               if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                                                                 setTimeout(function(){
-                                                                  console.log("zaifOrderOK24"+zaifOrderOK);
+                                                                  systemLogger.info("zaifOrderOK24"+zaifOrderOK);
                                                                   if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                                                                     setTimeout(function(){
-                                                                      console.log("zaifOrderOK27"+zaifOrderOK);
+                                                                      systemLogger.info("zaifOrderOK27"+zaifOrderOK);
                                                                       if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)}else{
                                                                         setTimeout(function(){
-                                                                          console.log("zaifOrderOK30"+zaifOrderOK);
+                                                                          systemLogger.info("zaifOrderOK30"+zaifOrderOK);
                                                                           if(zaifOrderOK == '1'){callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)};
                                                                         },3000); //30sec
                                                                       }
@@ -495,20 +542,19 @@ module.exports = {
       // callorderBF.orderBF(marketLimitBF, sideBF, orderPriceBF, size)
       let bfOrderOK = '';
       let callback5 = function(childOrderID, status){
-        console.log(childOrderID, status)
         bfOrderOK = childOrderID;
         bfStatus = status;
       };
       sendOrderBF.sendOrder(marketLimitBF, sideBF, orderPriceBF, size, callback5)
       setTimeout(function(){
         if(typeof bfOrderOK !== 'undefined'){
-          console.log("CC発注")
+          systemLogger.info("CC発注")
           sendOrderCC.sendOrder(sideCC,orderPriceCC, size);
         }else{
-          console.log("BF発注失敗")
+          systemLogger.info("BF発注失敗")
         }
       },1500);
-      console.log("order実行");
+      systemLogger.info("order実行");
     },
     getMarketStatus: function(callbackMarketStatus){
       //zaif 資産残高を取得
@@ -516,9 +562,8 @@ module.exports = {
       let marketStatus = [];
       //BF
       marketStatus[0] ={};
-      let callbackBFMarketStatus = function(BFstatus){
-        marketStatus[0] = {BFstatus:BFstatus};
-      };
+      const callbackBFMarketStatus = (BFstatus) => marketStatus[0] = {BFstatus:BFstatus};
+
       assetBF.getBFMarketStatus(callbackBFMarketStatus);
 
       setTimeout(function(){
@@ -535,7 +580,7 @@ module.exports = {
       },800);
     },
     getResult: function(){
-        console.log("Result"
+        systemLogger.info("Result"
         + " normalTrade(1:アビトラ,2:反対):" + normalTrade
         + " diffPerBFminusCC:" + (Math.round(diffPerBFminusCC * 10000) / 100)
         + " diffPerCCminusBF:" + (Math.round(diffPerCCminusBF * 10000) / 100)
@@ -764,58 +809,52 @@ module.exports = {
       diffPerArrayB = {"diffPerBFminusCC":diffPerBFminusCC,"diffPerBFminusQX":diffPerBFminusQX,"diffPerCCminusBF":diffPerCCminusBF,
         "diffPerCCminusQX":diffPerCCminusQX,"diffPerQXminusBF":diffPerQXminusBF,"diffPerQXminusCC":diffPerQXminusCC,}
       if(diffPerBFminusCC>=diffGO||diffPerBFminusQX>=diffGO||diffPerCCminusBF>=diffGO||diffPerCCminusQX>=diffGO||diffPerQXminusBF>=diffGO||diffPerQXminusCC>=diffGO){
-        console.log("0.3getChance")
+        systemLogger.info("0.3getChance")
       }
 
       callbackArbitrageTrade(orderGOArbitrageB, arbitrageOrderTypeB, diffPriceB, diffPerB, diffPerArrayB)
     },
     sendOrderBFandQX: function(size, marketLimitBF, sideBF, orderPriceBF, sideQX, orderPriceQX){
       let bfOrderOK = '';
-      let callback5 = function(childOrderID, status){
-        console.log(childOrderID, status)
+      const callback5 = (childOrderID, status) => {
         bfOrderOK = childOrderID;
         bfStatus = status;
       };
-      let callbackTestQX = function(stopQXc){
-        stopQX = stopQXc;
-      }
+      const callbackTestQX = (stopQXc) => stopQX = stopQXc;
+
       this.orderTestQX(callbackTestQX);
       setTimeout(function(){
         if(stopQX === ""){
           sendOrderBF.sendOrder(marketLimitBF, sideBF, orderPriceBF, size, callback5)
           setTimeout(function(){
             if(typeof bfOrderOK !== 'undefined'){
-              console.log("QX発注")
+              systemLogger.info("QX発注")
               sendOrderQX.sendOrder(sideQX, orderPriceQX, size);
             }else{
-              console.log("BF発注失敗")
+              systemLogger.info("BF発注失敗")
             }
           },1500);
-          console.log("order実行");
+          systemLogger.info("order実行");
         }
       },500)
     },
     sendOrderCCandQX: function(size, sideCC, orderPriceCC, sideQX, orderPriceQX){
-      let callbackTestQX = function(stopQXc){
-        stopQX = stopQXc;
-      }
+      const callbackTestQX = (stopQXc) => stopQX = stopQXc;
       this.orderTestQX(callbackTestQX);
       setTimeout(function(){
         if(stopQX === ""){
-          console.log("QX発注");
+          systemLogger.info("QX発注");
           sendOrderQX.sendOrder(sideQX,orderPriceQX, size);
-          console.log("CC発注");
+          systemLogger.info("CC発注");
           sendOrderCC.sendOrder(sideCC,orderPriceCC, size);
-          console.log("order実行");
+          systemLogger.info("order実行");
         }
       },500)
     },
     orderTestQX: function(callbackTestQX){
       let stopQX = "";
       let stopQXc = "";
-      let callbackTestOrderQX = function(stopQXc){
-        stopQX = stopQXc
-      };
+      const callbackTestOrderQX = (stopQXc) => stopQX = stopQXc;
       sendOrderQX.testOrder(callbackTestOrderQX);
 
       setTimeout(function(){
