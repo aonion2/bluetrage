@@ -1,0 +1,15 @@
+{
+  "appenders": {
+    "system": { "type": "dateFile", "filename": "../../log/callsendorder_system.log", "pattern": "-yyyy-MM-dd" },
+    "system": { "type": "console"},
+    "price":  { "type": "dateFile", "filename": "../../log/callsendorder_price.log", "pattern": "-yyyy-MM-dd" },
+    "price":  { "type": "console"},
+    "error":  { "type": "dateFile", "filename": "../../log/callsendorder_error.log", "pattern": "-yyyy-MM-dd" },
+    "error":  { "type": "console"}
+  },
+  "categories": {
+    "default": { "appenders": ["system"], "level": "debug" },
+    "price":   { "appenders": ["price"],  "level": "info" },
+    "error":   { "appenders": ["error"],  "level": "info" }
+  }
+}
