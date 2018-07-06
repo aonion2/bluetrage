@@ -1,27 +1,21 @@
-let sendOrderBF = require('./sendOrderBF.js');
-let sendOrderZaif = require('./sendOrderZaif.js');
-let callOrderFunction = require('./callsendorderFunction.js');
-let callorderBF = require('./callsendorderBF.js')
-let assetZaif = require('../asset/assetZaif.js');
-let assetBF = require('../asset/assetBitFlyer.js');
-let fs = require('fs');
-let orderConfig = JSON.parse(fs.readFileSync('../../config/orderConfig.json'));
+// "use strict";
 
-/*
-let Log4js = require('log4js');
+const sendOrderBF = require('./sendOrderBF.js');
+const sendOrderZaif = require('./sendOrderZaif.js');
+const callOrderFunction = require('./callsendorderFunction.js');
+const callorderBF = require('./callsendorderBF.js')
+const assetZaif = require('../asset/assetZaif.js');
+const assetBF = require('../asset/assetBitFlyer.js');
+const fs = require('fs');
+const orderConfig = JSON.parse(fs.readFileSync('../../config/orderConfig.json'));
 
-Log4js.configure('../../config/log-config.json');
+let log4js = require('log4js');
+log4js.configure('../../config/log-config.json');
 
 // ログ出力
-let systemLogger = Log4js.getLogger('system');
-let accessLogger = Log4js.getLogger('access');
-let errorLogger = Log4js.getLogger('error');
-
-// Informationログを出力する
-systemLogger.info('this is system log!!!');
-accessLogger.info('this is access log!!!');
-errorLogger.info('this is error log!!!');
-*/
+let systemLogger = log4js.getLogger('system');
+let priceLogger = log4js.getLogger('price');
+let errorLogger = log4js.getLogger('error');
 
 //Choose arbitrage type
 //1:ZaifがBitflyerより高い。調整（BTCをZaif->bitflyer）（bitflyer:Buy, Zaif:Sell）
@@ -48,9 +42,28 @@ let priceGotton2 = {};
 
 let lockFlag = "";
 
+class Price {
+  constructor() {
+    this.id = 'id_1';
+  }
+  set price(price) {
+    this._price = price;
+  }
+  get price() {
+    return this._price;
+  }
+  outputLog() {
+    priceLogger.info(`${this.price}`);
+  }
+}
+
+//const QXPrice2 = new Price();
+//QXPrice2.price = 950000;
+//QXPrice2.outputLog();
+
 //test mode
 //0:production mode, 1:test mode
-let testMode = orderConfig.testMode;
+const testMode = orderConfig.testMode;
 if (testMode == 1){
   size = orderConfig.testOrderSize;
   marketLimitBF = orderConfig.testMarketLimitBF;
@@ -64,14 +77,17 @@ let zaifJPYPriceForCheck = "";
 let zaifBTCPriceForCheck = "";
 let BFJPYPriceForCheck = "";
 let BFBTCPriceForCheck = "";
+let CCJPYPriceForCheck = "";
+let CCBTCPriceForCheck = "";
+let QXJPYPriceForCheck = "";
+let QXBTCPriceForCheck = "";
 
 let zaifPrice = "";
 let BFPrice = "";
 let CCPrice = "";
 let QXPrice = "";
 
-// callback
-let callbackAsset = function(exchangeAsset){
+const callbackAsset = (exchangeAsset) =>{
     zaifJPYPriceForCheck = exchangeAsset[0].jpyAssetZaif;
     zaifBTCPriceForCheck = exchangeAsset[1].btcAssetZaif;
     BFJPYPriceForCheck = exchangeAsset[2].jpyassetbf;
@@ -82,7 +98,7 @@ let callbackAsset = function(exchangeAsset){
     QXBTCPriceForCheck = exchangeAsset[7].btcAssetQX;
 };
 
-let callbackAssetCheckFlag = function(assetCheckFlag){
+const callbackAssetCheckFlag = (assetCheckFlag) => {
     assetCheckForArbitrage = assetCheckFlag
     CCBuyable  = assetCheckFlag[0];
     CCSellable = assetCheckFlag[1];
@@ -92,7 +108,7 @@ let callbackAssetCheckFlag = function(assetCheckFlag){
     QXSellable = assetCheckFlag[5];
 };
 
-let callbackExchangePrice = function(exchangePrice){
+const callbackExchangePrice = (exchangePrice) => {
     BFPrice = exchangePrice[0].BFPrice;
     //zaifPrice = exchangePrice[1].zaifPrice;
     zaifPrice = 0;
@@ -106,20 +122,16 @@ let callbackExchangePrice = function(exchangePrice){
     QXPriceUpper = exchangePrice[9].QXPriceUpper;
 };
 
-let callbackCheckAsset = function(assetCheckB){
-    assetCheck = assetCheckB;
-};
-let callbackCheckCCAsset = function(assetCCCheckB){
-    assetCCCheck = assetCCCheckB;
-};
+const callbackCheckAsset = (assetCheckB) => assetCheck = assetCheckB;
+
+const callbackCheckCCAsset = (assetCCCheckB) => assetCCCheck = assetCCCheckB;
+
 let marketStatusAdd = "";
-let callbackMarketStatus = function(marketStatusAddB){
-    marketStatusAdd = marketStatusAddB;
-};
+const callbackMarketStatus = (marketStatusAddB) => marketStatusAdd = marketStatusAddB;
 
 let orderGOAnti ="";
 let antiSize ="";
-let callbackAntiTrade = function(orderGOAntiB,arbitrageOrderTypeB){
+const callbackAntiTrade = (orderGOAntiB,arbitrageOrderTypeB) => {
     orderGOAnti = orderGOAntiB;
     if(orderGOAnti==="1"){
       arbitrageOrderType = arbitrageOrderTypeB;
@@ -127,7 +139,7 @@ let callbackAntiTrade = function(orderGOAntiB,arbitrageOrderTypeB){
 };
 
 let orderGOArbitrage ="";
-let callbackArbitrageTrade = function(orderGOArbitrageB, arbitrageOrderTypeB, diffPriceB, diffPerB, diffPerArrayB){
+const callbackArbitrageTrade = (orderGOArbitrageB, arbitrageOrderTypeB, diffPriceB, diffPerB, diffPerArrayB) => {
     orderGOArbitrage = orderGOArbitrageB;
     diffPrice = diffPriceB;
     diffPer = diffPerB;
@@ -138,6 +150,7 @@ let callbackArbitrageTrade = function(orderGOArbitrageB, arbitrageOrderTypeB, di
       judgeGO = "1";
     }
 };
+
 // Function1 Asset取得
 callOrderFunction.getAsset(callbackAsset);
 
@@ -195,7 +208,7 @@ function event() {
       callOrderFunction.getAssetCheckFlagSetting(CCJPYPriceForCheck, CCBTCPriceForCheck, BFJPYPriceForCheck, BFBTCPriceForCheck, QXJPYPriceForCheck, QXBTCPriceForCheck, size, CCPrice, BFPrice, QXPrice, callbackAssetCheckFlag);
 
       if(CCPrice==="" || BFPrice==="" || BFJPYPriceForCheck==="" || CCJPYPriceForCheck==="" || QXJPYPriceForCheck===""){
-        console.log("Err:価格取得できず")
+        errorLogger.info("Err:価格取得できず")
       }else{
         //2.差分をチェックする {price->diff->diffcheck->buyorsell}
 
@@ -224,7 +237,7 @@ function event() {
         QXPriceLower = 950000;
         QXPriceUpper = 960000;
         //*/
-        /*4. QX > BF > CC
+        //4. QX > BF > CC
         BFPriceLower = 970000;
         BFPriceUpper = 980000;
         CCPriceLower = 950000;
@@ -345,7 +358,7 @@ function event() {
         }
 
           let logDate = new Date();
-          console.log(logDate + "normalTrade:"+normalTrade+" type:"+arbitrageOrderType
+          systemLogger.info(logDate + "normalTrade:"+normalTrade+" type:"+arbitrageOrderType
            + " diffBF-CC:"+(Math.round(diffPerArray.diffPerBFminusCC * 10000) / 100)
            + " diffBF-QX:"+(Math.round(diffPerArray.diffPerBFminusQX * 10000) / 100)
            + " diffCC-BF:"+(Math.round(diffPerArray.diffPerCCminusBF * 10000) / 100)
@@ -476,9 +489,9 @@ function event() {
             }
           } else {
             judgeGO = "";
-            console.log("Side取得エラー")
+            errorLogger.info("Side取得エラー")
           }
-        console.log("assetCheck:"+assetCheck)
+        systemLogger.info("assetCheck:"+assetCheck)
 
         /*For test
         console.log("sideBF"+sideBF)
@@ -509,13 +522,13 @@ function event() {
           message = "本番発注です"
         }
 
-        if(testMode=='1'){
+        if(testMode=='2'){
             let orderInfoForTest = {judgeGO:judgeGO,assetCheck:assetCheck,sideCC:sideCC,orderPriceCC:orderPriceCC,
             size:size,sideBF:sideBF,orderPriceBF:orderPriceBF,sideQX:sideQX,orderPriceQX:orderPriceQX}
             logOrderInfoForTest.push(orderInfoForTest)
-            console.log(JSON.stringify(logOrderInfoForTest))
+            systemLogger.info(JSON.stringify(logOrderInfoForTest))
         }else if(judgeGO != "1" || assetCheck != "1" || lockFlag === "1"){
-            console.log("orderしない");
+            systemLogger.info("orderしない");
         }else{
             // 注文呼び出し
             //callOrderFunction.sendOrderBFandZaif(sideZaif,orderPriceZaif, size, marketLimitBF, sideBF, orderPriceBF)
@@ -527,7 +540,7 @@ function event() {
               callOrderFunction.sendOrderCCandQX(size, sideCC, orderPriceCC, sideQX, orderPriceQX)
             }
 
-            console.log("normalTrade(1:アビトラ,2:反対):"+normalTrade
+            systemLogger.info("normalTrade(1:アビトラ,2:反対):"+normalTrade
             + " diffBF-CC:"+(Math.round(diffPerArray.diffPerBFminusCC * 10000) / 100)
             + " diffBF-QX:"+(Math.round(diffPerArray.diffPerBFminusQX * 10000) / 100)
             + " diffCC-BF:"+(Math.round(diffPerArray.diffPerCCminusBF * 10000) / 100)
@@ -540,7 +553,7 @@ function event() {
             clearInterval(timer1);
             //},1000)
         }
-        console.log(message)
+        systemLogger.info(message)
 
     }
   },2800);
@@ -551,7 +564,7 @@ setTimeout(function(){
   callOrderFunction.checkCCAsset(BFBTCPriceForCheck,CCBTCPriceForCheck, QXBTCPriceForCheck, orderConfig.TotalBTCAsset, callbackCheckCCAsset)
   //価格チェック
   if(BFJPYPriceForCheck==="" || CCJPYPriceForCheck==="" || QXJPYPriceForCheck==="" ||typeof BFJPYPriceForCheck === 'undefined' || typeof CCJPYPriceForCheck === 'undefined' || typeof QXJPYPriceForCheck === 'undefined' || assetCCCheck == ""){
-      console.log("Err:資産情報取得エラー")
+      errorLogger.info("Err:資産情報取得エラー")
   } else {
     logPrice = [];
     pricelog = {
@@ -567,7 +580,7 @@ setTimeout(function(){
       + ((Math.round(BFBTCPriceForCheck * 10000) / 10000)+(Math.round(CCBTCPriceForCheck * 10000) / 10000)+(Math.round(QXBTCPriceForCheck * 10000) / 10000))*900000
     }
     logPrice.push(pricelog)
-    console.log(JSON.stringify(logPrice))
+    systemLogger.info(JSON.stringify(logPrice))
     setTimeout(function(){
       timer1 = setInterval(event, 2700);
     },2000);
